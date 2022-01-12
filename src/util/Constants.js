@@ -64,6 +64,10 @@ exports.Endpoints = {
         return makeImageUrl(`${root}/icons/${guildId}/${hash}`, { format, size });
       },
       AppIcon: (appId, hash, options) => makeImageUrl(`${root}/app-icons/${appId}/${hash}`, options),
+      ChannelIcon: (channelID, hash, format = 'webp', size, dynamic = false) => {
+        if (dynamic) format = hash.startsWith('a_') ? 'gif' : format;
+        return makeImageUrl(`${root}/channel-icons/${channelID}/${hash}`, { size, format });
+      },
       AppAsset: (appId, hash, options) => makeImageUrl(`${root}/app-assets/${appId}/${hash}`, options),
       StickerPackBanner: (bannerId, format, size) =>
         makeImageUrl(`${root}/app-assets/710982414301790216/store/${bannerId}`, { size, format }),
@@ -209,6 +213,8 @@ exports.Events = {
   GUILD_SCHEDULED_EVENT_DELETE: 'guildScheduledEventDelete',
   GUILD_SCHEDULED_EVENT_USER_ADD: 'guildScheduledEventUserAdd',
   GUILD_SCHEDULED_EVENT_USER_REMOVE: 'guildScheduledEventUserRemove',
+  RELATIONSHIP_ADD: 'relationshipAdd',
+  RELATIONSHIP_REMOVE: 'relationshipRemove',
 };
 
 exports.ShardEvents = {
@@ -291,6 +297,8 @@ exports.PartialTypes = keyMirror(['USER', 'CHANNEL', 'GUILD_MEMBER', 'MESSAGE', 
  * * GUILD_SCHEDULED_EVENT_DELETE
  * * GUILD_SCHEDULED_EVENT_USER_ADD
  * * GUILD_SCHEDULED_EVENT_USER_REMOVE
+ * * RELATIONSHIP_ADD
+ * * RELATIONSHIP_REMOVE
  * @typedef {string} WSEventType
  * @see {@link https://discord.com/developers/docs/topics/gateway#commands-and-events-gateway-events}
  */
@@ -350,6 +358,8 @@ exports.WSEvents = keyMirror([
   'GUILD_SCHEDULED_EVENT_DELETE',
   'GUILD_SCHEDULED_EVENT_USER_ADD',
   'GUILD_SCHEDULED_EVENT_USER_REMOVE',
+  'RELATIONSHIP_ADD',
+  'RELATIONSHIP_REMOVE',
 ]);
 
 /**

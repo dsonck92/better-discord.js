@@ -56,6 +56,8 @@ class ActionsManager {
     this.register(require('./UserUpdate'));
     this.register(require('./VoiceStateUpdate'));
     this.register(require('./WebhooksUpdate'));
+    this.register(require('./RelationshipAdd'));
+    this.register(require('./RelationshipRemove'));
   }
 
   register(Action) {

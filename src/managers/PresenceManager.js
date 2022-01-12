@@ -18,8 +18,15 @@ class PresenceManager extends CachedManager {
    * @name PresenceManager#cache
    */
 
-  _add(data, cache) {
-    return super._add(data, cache, { id: data.user.id });
+  _add(data, guild, cache) {
+    if (typeof guild === 'boolean') {
+      cache = guild;
+      guild = undefined;
+    }
+    const existing = this.cache.get(data.user.id);
+    const ret = existing ? existing.patch(data) : super._add(data, cache, { id: data.user.id });
+    if (guild) guild.presences.cache.set(data.user.id, ret);
+    return ret;
   }
 
   /**

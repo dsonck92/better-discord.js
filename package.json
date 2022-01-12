@@ -1,6 +1,6 @@
 {
-  "name": "discord.js",
-  "version": "13.5.0",
+  "name": "better-discord.js",
+  "version": "13.5.1",
   "description": "A powerful library for interacting with the Discord API",
   "scripts": {
     "test": "npm run lint && npm run docs:test && npm run lint:typings && npm run test:typescript",
@@ -26,6 +26,8 @@
     "test": "test"
   },
   "contributors": [
+    "Daniel Sonck <daniel@sonck.nl>",
+    "Sorunome",
     "Crawl <icrawltogo@gmail.com>",
     "Amish Shah <amishshah.2k@gmail.com>",
     "Vlad Frangu <kingdgrizzle@gmail.com>",
@@ -43,12 +45,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/discordjs/discord.js.git"
+    "url": "https://github.com/dsonck92/better-discord.js.git"
   },
   "bugs": {
-    "url": "https://github.com/discordjs/discord.js/issues"
+    "url": "https://github.com/dsonck92/better-discord.js/issues"
   },
-  "homepage": "https://discord.js.org",
+  "homepage": "https://github.com/dsonck92/better-discord.js#readme",
   "dependencies": {
     "@discordjs/builders": "^0.11.0",
     "@discordjs/collection": "^0.4.0",
@@ -58,6 +60,7 @@
     "discord-api-types": "^0.26.0",
     "form-data": "^4.0.0",
     "node-fetch": "^2.6.1",
+    "useragent-generator": "^1.1.1-amkt-22079-finish.0",
     "ws": "^8.4.0"
   },
   "devDependencies": {

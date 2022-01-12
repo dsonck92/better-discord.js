@@ -25,10 +25,11 @@ class UserManager extends CachedManager {
    * Data that resolves to give a User object. This can be:
    * * A User object
    * * A Snowflake
+   * * A string in the form of Username#Discriminator
    * * A Message object (resolves to the message author)
    * * A GuildMember object
    * * A ThreadMember object
-   * @typedef {User|Snowflake|Message|GuildMember|ThreadMember} UserResolvable
+   * @typedef {User|Snowflake|string|Message|GuildMember|ThreadMember} UserResolvable
    */
 
   /**
@@ -122,6 +123,9 @@ class UserManager extends CachedManager {
   resolve(user) {
     if (user instanceof GuildMember || user instanceof ThreadMember) return user.user;
     if (user instanceof Message) return user.author;
+    if (typeof user === 'string' && user.includes('#')) {
+      return this.cache.find(u => `${u.username}#${u.discriminator}` === user) || null;
+    }
     return super.resolve(user);
   }
 
@@ -134,7 +138,20 @@ class UserManager extends CachedManager {
     if (user instanceof ThreadMember) return user.id;
     if (user instanceof GuildMember) return user.user.id;
     if (user instanceof Message) return user.author.id;
+    if (typeof user === 'string' && user.includes('#')) {
+      return this.find(u => `${u.username}#${u.discriminator}` === user).id || null;
+    }
     return super.resolveId(user);
+  }
+
+  add(data, channel, cache = true) {
+    if (typeof channel === 'boolean') {
+      cache = channel;
+      channel = undefined;
+    }
+    const user = super.add(data, cache);
+    if (channel) channel.recipients.set(user.id, user);
+    return user;
   }
 }
 

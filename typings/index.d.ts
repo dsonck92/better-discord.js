@@ -143,6 +143,14 @@ import {
   RawWidgetMemberData,
 } from './rawDataTypes';
 
+declare enum RelationshipType {
+  friend = 0,
+  block = 1,
+  incoming = 2,
+  outgoing = 3,
+  unknown = 4,
+}
+
 //#region Classes
 
 export class Activity {
@@ -469,10 +477,9 @@ export type KeyedEnum<K, T> = {
   [Key in keyof K]: T | string;
 };
 
-export type EnumValueMapped<E extends KeyedEnum<T, number>, T extends Partial<Record<keyof E, unknown>>> = T &
-  {
-    [Key in keyof T as E[Key]]: T[Key];
-  };
+export type EnumValueMapped<E extends KeyedEnum<T, number>, T extends Partial<Record<keyof E, unknown>>> = T & {
+  [Key in keyof T as E[Key]]: T[Key];
+};
 
 export type MappedChannelCategoryTypes = EnumValueMapped<
   typeof ChannelTypes,
@@ -545,6 +552,7 @@ export class Client<Ready extends boolean = boolean> extends BaseClient {
   public channels: ChannelManager;
   public readonly emojis: BaseGuildEmojiManager;
   public guilds: GuildManager;
+  public presences: PrescenceManager;
   public options: ClientOptions;
   public readyAt: If<Ready, Date>;
   public readonly readyTimestamp: If<Ready, number>;
@@ -556,7 +564,9 @@ export class Client<Ready extends boolean = boolean> extends BaseClient {
   public users: UserManager;
   public voice: ClientVoiceManager;
   public ws: WebSocketManager;
+  public acceptInvite(invite: InviteResolvable): Promise<Guild | null>;
   public destroy(): void;
+  public fetchApplication(): Promise<ClientApplication>;
   public fetchGuildPreview(guild: GuildResolvable): Promise<GuildPreview>;
   public fetchInvite(invite: InviteResolvable, options?: ClientFetchInviteOptions): Promise<Invite>;
   public fetchGuildTemplate(template: GuildTemplateResolvable): Promise<GuildTemplate>;
@@ -566,11 +576,11 @@ export class Client<Ready extends boolean = boolean> extends BaseClient {
   public fetchWebhook(id: Snowflake, token?: string): Promise<Webhook>;
   public fetchGuildWidget(guild: GuildResolvable): Promise<Widget>;
   public generateInvite(options?: InviteGenerationOptions): string;
-  public login(token?: string): Promise<string>;
+  public login(token?: string, connectAsBot?: boolean): Promise<string>;
   public isReady(): this is Client<true>;
   /** @deprecated Use {@link Sweepers#sweepMessages} instead */
   public sweepMessages(lifetime?: number): number;
-  public toJSON(): unknown;
+  public toJSON(): object;
 
   public on<K extends keyof ClientEvents>(event: K, listener: (...args: ClientEvents[K]) => Awaitable<void>): this;
   public on<S extends string | symbol>(
@@ -619,6 +629,7 @@ export class ClientPresence extends Presence {
 
 export class ClientUser extends User {
   public mfaEnabled: boolean;
+  public readonly relationships: RelationshipManager;
   public readonly presence: ClientPresence;
   public verified: boolean;
   public edit(data: ClientUserEditData): Promise<this>;
@@ -866,6 +877,17 @@ export class Emoji extends Base {
   public readonly url: string | null;
   public toJSON(): unknown;
   public toString(): string;
+}
+
+export class GroupDMChannel extends TextBasedChannel(Channel) {
+  constructor(client: Client, data?: object);
+  public icon: string | null;
+  public messages: MessageManager;
+  public name: string | null;
+  public readonly owner: User;
+  public readonly partial: false;
+  public recipients: Collection<Snowflake, User>;
+  public iconURL(options?: ImageURLOptions & { dynamic?: boolean }): string | null;
 }
 
 export class Guild extends AnonymousGuild {
@@ -1380,7 +1402,7 @@ export class InteractionWebhook extends PartialWebhookMixin() {
 
 export class Invite extends Base {
   private constructor(client: Client, data: RawInviteData);
-  public channel: NonThreadGuildBasedChannel | PartialGroupDMChannel;
+  public channel: GuildChannel | GroupDMChannel;
   public channelId: Snowflake;
   public code: string;
   public readonly deletable: boolean;
@@ -1834,6 +1856,11 @@ export class PartialGroupDMChannel extends Channel {
   public icon: string | null;
   public recipients: PartialRecipient[];
   public iconURL(options?: StaticImageURLOptions): string | null;
+}
+
+export class Relationship extends Base {
+  public user: User;
+  public type: keyof typeof RelationshipType;
 }
 
 export class PermissionOverwrites extends Base {
@@ -3207,6 +3234,16 @@ export class ReactionUserManager extends CachedManager<Snowflake, User, UserReso
   public remove(user?: UserResolvable): Promise<MessageReaction>;
 }
 
+export class RelationshipManager extends BaseManager<Snowflake, Relationship, RelationshipResolvable> {
+  constructor(client: Client, iterable: Iterable<any> | undefined);
+  public readonly blocked: Collection<Snowflake, User>;
+  public readonly friends: Collection<Snowflake, User>;
+  public readonly incoming: Collection<Snowflake, User>;
+  public readonly outgoing: Collection<Snowflake, User>;
+  public remove(user: UserResolvable): Promise<User | null>;
+  public request(type: keyof typeof RelationshipType, user: UserResolvable): Promise<User | null | string>;
+}
+
 export class RoleManager extends CachedManager<Snowflake, Role, RoleResolvable> {
   private constructor(guild: Guild, iterable?: Iterable<RawRoleData>);
   public readonly everyone: Role;
@@ -3330,6 +3367,31 @@ export interface WebhookFields extends PartialWebhookFields {
   readonly createdTimestamp: number;
   delete(reason?: string): Promise<void>;
   edit(options: WebhookEditData, reason?: string): Promise<Webhook>;
+  editMessage(
+    oldMessage: string | Message,
+    content: APIMessageContentResolvable | (WebhookMessageOptions & { split?: false }) | MessageAdditions,
+  ): Promise<Message>;
+  editMessage(
+    oldMessage: string | Message,
+    options: WebhookMessageOptions & { split: true | SplitOptions },
+  ): Promise<Message[]>;
+  editMessage(oldMessage: string | Message, options: WebhookMessageOptions | APIMessage): Promise<Message | Message[]>;
+  editMessage(
+    oldMessage: string | Message,
+    content: StringResolvable,
+    options: (WebhookMessageOptions & { split?: false }) | MessageAdditions,
+  ): Promise<Message>;
+  editMessage(
+    oldMessage: string | Message,
+    content: StringResolvable,
+    options: WebhookMessageOptions & { split: true | SplitOptions },
+  ): Promise<Message[]>;
+  editMessage(
+    oldMessage: string | Message,
+    content: StringResolvable,
+    options: WebhookMessageOptions,
+  ): Promise<Message | Message[]>;
+  deleteMessage(oldMessage: string | Message, options?: { timeout?: number; reason?: string }): Promise<Message>;
   sendSlackMessage(body: unknown): Promise<boolean>;
 }
 
@@ -3950,6 +4012,7 @@ export interface ClientEvents extends BaseClientEvents {
   presenceUpdate: [oldPresence: Presence | null, newPresence: Presence];
   ready: [client: Client<true>];
   invalidated: [];
+  relationshipAdd: [Relationship, Relationship];
   roleCreate: [role: Role];
   roleDelete: [role: Role];
   roleUpdate: [oldRole: Role, newRole: Role];
@@ -4349,6 +4412,26 @@ export interface EscapeMarkdownOptions {
 }
 
 export type ExplicitContentFilterLevel = keyof typeof ExplicitContentFilterLevels;
+
+export interface Extendable {
+  GuildEmoji: typeof GuildEmoji;
+  DMChannel: typeof DMChannel;
+  TextChannel: typeof TextChannel;
+  VoiceChannel: typeof VoiceChannel;
+  GroupDMChannel: typeof GroupDMChannel;
+  CategoryChannel: typeof CategoryChannel;
+  NewsChannel: typeof NewsChannel;
+  StoreChannel: typeof StoreChannel;
+  GuildMember: typeof GuildMember;
+  Guild: typeof Guild;
+  Message: typeof Message;
+  MessageReaction: typeof MessageReaction;
+  Presence: typeof Presence;
+  VoiceState: typeof VoiceState;
+  Role: typeof Role;
+  User: typeof User;
+  Relationship: typeof Relationship;
+}
 
 export interface FetchApplicationCommandOptions extends BaseFetchOptions {
   guildId?: Snowflake;
@@ -5209,6 +5292,16 @@ export type MessageType = keyof typeof MessageTypes;
 
 export type MFALevel = keyof typeof MFALevels;
 
+export type MessageTarget =
+  | TextChannel
+  | NewsChannel
+  | DMChannel
+  | GroupDMChannel
+  | User
+  | GuildMember
+  | Webhook
+  | WebhookClient;
+
 export interface MultipleShardRespawnOptions {
   shardDelay?: number;
   respawnDelay?: number;
@@ -5641,6 +5734,9 @@ export interface Vanity {
   uses: number;
 }
 
+export type UserResolvable = User | Snowflake | Message | GuildMember | string;
+
+export type RelationshipResolvable = Relationship | Snowflake;
 export type VerificationLevel = keyof typeof VerificationLevels;
 
 export type VoiceBasedChannelTypes = VoiceBasedChannel['type'];

@@ -458,7 +458,7 @@ class Guild extends AnonymousGuild {
 
     if (data.presences) {
       for (const presence of data.presences) {
-        this.presences._add(Object.assign(presence, { guild: this }));
+        this.client.presences._add(Object.assign(presence, { guild: this }), this);
       }
     }
 

@@ -19,7 +19,7 @@ try {
  * Represents a Shard's WebSocket connection
  */
 class WebSocketShard extends EventEmitter {
-  constructor(manager, id) {
+  constructor(manager, id, connectAsBot = true) {
     super();
 
     /**
@@ -33,6 +33,13 @@ class WebSocketShard extends EventEmitter {
      * @type {number}
      */
     this.id = id;
+
+    /**
+     * If we should connect as bot
+     * @type {boolean}
+     * @private
+     */
+    this.connectAsBot = connectAsBot;
 
     /**
      * The current status of the shard
@@ -608,12 +615,36 @@ class WebSocketShard extends EventEmitter {
     this.status = Status.IDENTIFYING;
 
     // Clone the identify payload and assign the token and shard info
-    const d = {
-      ...client.options.ws,
-      intents: Intents.resolve(client.options.intents),
-      token: client.token,
-      shard: [this.id, Number(client.options.shardCount)],
-    };
+    let d = {};
+    if (this.connectAsBot) {
+      d = {
+        ...client.options.ws,
+        intents: Intents.resolve(client.options.intents),
+        token: client.token,
+        shard: [this.id, Number(client.options.shardCount)],
+      };
+    } else {
+      const ua = require('useragent-generator');
+      const chromeVersion = '87.0.4280';
+      const wsOptions = Object.assign({}, client.options.ws, {
+        properties: {
+          os: 'Windows',
+          browser: 'Chrome',
+          device: '',
+          browser_user_agent: ua.chrome(chromeVersion),
+          browser_version: chromeVersion,
+          os_version: '',
+          referrer: '',
+          referring_domain: '',
+          referrer_current: '',
+          referring_domain_current: '',
+        },
+      });
+      d = {
+        ...wsOptions,
+        token: client.token,
+      };
+    }
 
     this.debug(`[IDENTIFY] Shard ${this.id}/${client.options.shardCount} with intents: ${d.intents}`);
     this.send({ op: Opcodes.IDENTIFY, d }, true);

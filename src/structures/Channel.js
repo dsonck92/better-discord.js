@@ -179,8 +179,8 @@ class Channel extends Base {
       if ((data.recipients && data.type !== ChannelTypes.GROUP_DM) || data.type === ChannelTypes.DM) {
         channel = new DMChannel(client, data);
       } else if (data.type === ChannelTypes.GROUP_DM) {
-        const PartialGroupDMChannel = require('./PartialGroupDMChannel');
-        channel = new PartialGroupDMChannel(client, data);
+        const GroupDMChannel = require('./GroupDMChannel');
+        channel = new GroupDMChannel(client, data);
       }
     } else {
       guild ??= client.guilds.cache.get(data.guild_id);

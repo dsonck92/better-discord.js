@@ -123,23 +123,33 @@ class WebSocketManager extends EventEmitter {
 
   /**
    * Connects this manager to the gateway.
+   * @param {boolean} connectAsBot Weather to connect as bot. Defaults to true.
    * @private
    */
-  async connect() {
+  async connect(connectAsBot = true) {
     const invalidToken = new Error(WSCodes[4004]);
+    const promise = connectAsBot ? this.client.api.gateway.bot.get() : this.client.api.gateway.get({ auth: false });
     const {
       url: gatewayURL,
       shards: recommendedShards,
       session_start_limit: sessionStartLimit,
-    } = await this.client.api.gateway.bot.get().catch(error => {
+    } = await promise.catch(error => {
       throw error.httpStatus === 401 ? invalidToken : error;
     });
 
     const { total, remaining } = sessionStartLimit;
+    this.gateway = `${gatewayURL}/`;
 
     this.debug(`Fetched Gateway Information
     URL: ${gatewayURL}
     Recommended Shards: ${recommendedShards}`);
+
+    if (!connectAsBot) {
+      this.shardQueue = new Set([new WebSocketShard(this, 0, false)]);
+      return this.createShards();
+    }
+
+    this.sessionStartLimit = sessionStartLimit;
 
     this.debug(`Session Limit Information
     Total: ${total}

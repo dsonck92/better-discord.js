@@ -1,6 +1,7 @@
 'use strict';
 
 const User = require('./User');
+const RelationshipManager = require('../managers/RelationshipManager');
 const DataResolver = require('../util/DataResolver');
 
 /**
@@ -8,6 +9,17 @@ const DataResolver = require('../util/DataResolver');
  * @extends {User}
  */
 class ClientUser extends User {
+  constructor(client, data) {
+    super(client, data);
+    this._typing = new Map();
+
+    /**
+     * All of the {@link Relationship}s that the client is currently handling, mapped by their IDs
+     * @type {RelationshipManager<Snowflake, Relationship>}
+     */
+    this.relationships = new RelationshipManager(this.client);
+  }
+
   _patch(data) {
     super._patch(data);
 

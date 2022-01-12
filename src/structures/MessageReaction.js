@@ -25,12 +25,6 @@ class MessageReaction {
     this.message = message;
 
     /**
-     * Whether the client has given this reaction
-     * @type {boolean}
-     */
-    this.me = data.me;
-
-    /**
      * A manager of the users that have given this reaction
      * @type {ReactionUserManager}
      */
@@ -49,6 +43,12 @@ class MessageReaction {
        */
       this.count ??= data.count;
     }
+
+    /**
+     * Whether the client has given this reaction
+     * @type {boolean}
+     */
+    this.me = data.me;
   }
 
   /**
